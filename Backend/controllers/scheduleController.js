@@ -4,8 +4,7 @@ const path = require("path");
 
 const timers = new Map();
 
-const pythonPath = "C:\\Program Files\\Python312\\python.exe"; // ✅ Correct way
-
+const pythonPath = "C:\\Program Files\\Python312\\python.exe";
 
 function runAppPy() {
   const projectDir = path.join(__dirname, "..", "project");
