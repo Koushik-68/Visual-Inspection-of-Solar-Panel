@@ -23,8 +23,8 @@ node_modules/
 Backend/node_modules/
 
 # Environment files (security)
-.env
-Backend/.env
+# .env
+# Backend/.env
 
 # Optional (good practice)
 .vscode/
