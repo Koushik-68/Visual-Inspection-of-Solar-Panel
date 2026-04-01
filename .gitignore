@@ -18,3 +18,17 @@ var/
 .installed.cfg
 *.egg
 captured_images/
+# Node modules (VERY IMPORTANT)
+node_modules/
+Backend/node_modules/
+
+# Environment files (security)
+.env
+Backend/.env
+
+# Optional (good practice)
+.vscode/
+.DS_Store
+uploads/
+
+received_images/
