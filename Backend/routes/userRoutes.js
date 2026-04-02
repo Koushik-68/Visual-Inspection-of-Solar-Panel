@@ -14,6 +14,13 @@ router.get("/panels/:id", panelCtrl.getPanelById);
 router.patch("/panels/:id", authMiddleware, panelCtrl.updatePanel);
 router.delete("/panels/:id", authMiddleware, panelCtrl.deletePanel);
 
+// Latest inspection history for a specific panel (max 3 records)
+router.get(
+  "/panels/:panelId/history",
+  authMiddleware,
+  panelCtrl.getPanelHistory,
+);
+
 router.post("/panels/bulk", authMiddleware, panelCtrl.bulkCreatePanels);
 
 // Batch, filter, search
@@ -21,7 +28,7 @@ router.get("/panels/batch", authMiddleware, panelCtrl.listPanelsBatch);
 router.get(
   "/panels/fault-level",
   authMiddleware,
-  panelCtrl.listPanelsByFaultLevel
+  panelCtrl.listPanelsByFaultLevel,
 );
 router.get("/panels/search", authMiddleware, panelCtrl.searchPanelsById);
 
@@ -29,7 +36,7 @@ router.get("/panels/search", authMiddleware, panelCtrl.searchPanelsById);
 router.post(
   "/panels/backup-inspection",
   authMiddleware,
-  panelCtrl.backupInspectionData
+  panelCtrl.backupInspectionData,
 );
 
 // View backup data

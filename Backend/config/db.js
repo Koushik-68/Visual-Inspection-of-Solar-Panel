@@ -94,6 +94,40 @@ async function init() {
     )
   `);
 
+  // 🔄 Ensure panels table has latest schema even on older databases
+  // Safely add the image column if it was missing in an existing DB
+  try {
+    await pool.query(`
+      ALTER TABLE panels
+      ADD COLUMN image LONGTEXT NULL
+      AFTER current_fault_level
+    `);
+  } catch (err) {
+    // Ignore duplicate-column errors; log anything else
+    const msg = String(err && err.message ? err.message : err);
+    if (
+      !msg.toLowerCase().includes("duplicate column") &&
+      !msg.toLowerCase().includes("exists")
+    ) {
+      console.error("Error ensuring image column on panels table:", err);
+    }
+  }
+
+  // ✅ Create PANEL_INSPECTIONS table (per-panel inspection history)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS panel_inspections (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      panel_id VARCHAR(100) NOT NULL,
+      user_id INT NOT NULL,
+      inspected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      description TEXT,
+      fault_level VARCHAR(20),
+      inspector VARCHAR(255),
+      image LONGTEXT,
+      INDEX idx_panel_user (user_id, panel_id, inspected_at DESC)
+    )
+  `);
+
   // ✅ Test connection
   try {
     const conn = await pool.getConnection();

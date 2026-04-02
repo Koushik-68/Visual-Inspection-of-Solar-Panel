@@ -42,6 +42,7 @@ const PanelDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [localPanelData, setLocalPanelData] = useState<PanelData | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
 
   useEffect(() => {
     const refreshData = async () => {
@@ -81,6 +82,28 @@ const PanelDetail: React.FC = () => {
       setLoading(false);
     }
   }, [id, getPanelById]);
+
+  // Load latest inspection history (up to 3 records) for this panel
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!id) return;
+      try {
+        const res = await fetch(
+          `http://localhost:5000/api/user/panels/${encodeURIComponent(id)}/history`,
+          {
+            credentials: "include",
+          },
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        setHistory(data || []);
+      } catch (err) {
+        console.error("Error fetching panel history:", err);
+      }
+    };
+
+    fetchHistory();
+  }, [id]);
 
   const getFaultLevelBgClass = (level: string) => {
     switch (level) {
@@ -496,9 +519,9 @@ const PanelDetail: React.FC = () => {
               title="Inspection History"
               className="overflow-hidden transition-all duration-300 hover:shadow-md animate-slideInRight"
             >
-              {panel.inspectionHistory.length > 0 ? (
+              {history.length > 0 ? (
                 <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                  {panel.inspectionHistory.map((record: any, index: number) => (
+                  {history.map((record: any, index: number) => (
                     <div
                       key={index}
                       className="border-l-4 pl-4 py-3 rounded-r-lg transition-all duration-300 hover:shadow-md animate-fadeIn"
@@ -576,7 +599,7 @@ const PanelDetail: React.FC = () => {
               <div style={{ width: "100%", height: 320 }} className="relative">
                 <ResponsiveContainer>
                   <LineChart
-                    data={panel.inspectionHistory.map((record: any) => ({
+                    data={history.map((record: any) => ({
                       date: record.date,
                       priority: (() => {
                         const desc = record.description?.toLowerCase() || "";

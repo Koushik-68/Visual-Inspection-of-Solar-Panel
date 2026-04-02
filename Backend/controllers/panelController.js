@@ -155,6 +155,39 @@ exports.updatePanelFromDetection = async (req, res) => {
       panelId,
     ]);
     const panelRow = rows[0];
+
+    // Record this inspection in the history table
+    if (panelRow) {
+      const userId = panelRow.user_id;
+      await db.query(
+        `INSERT INTO panel_inspections (panel_id, user_id, description, fault_level, inspector, image)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          panelId,
+          userId,
+          faults || "No issues detected",
+          normalizedLevel,
+          "AI Detection System",
+          image || null,
+        ],
+      );
+
+      // Keep only the latest 3 inspections per panel
+      await db.query(
+        `DELETE FROM panel_inspections
+         WHERE panel_id = ? AND user_id = ?
+           AND id NOT IN (
+             SELECT id FROM (
+               SELECT id FROM panel_inspections
+               WHERE panel_id = ? AND user_id = ?
+               ORDER BY inspected_at DESC
+               LIMIT 3
+             ) AS t
+           )`,
+        [panelId, userId, panelId, userId],
+      );
+    }
+
     return res.json(mapPanelRow(panelRow));
   } catch (err) {
     console.error("Detection update error:", err);
@@ -245,6 +278,39 @@ exports.listPanelsByFaultLevel = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Could not fetch panels by fault level" });
+  }
+};
+
+// GET /api/user/panels/:panelId/history - latest 3 inspection records for a panel
+exports.getPanelHistory = async (req, res) => {
+  const userId = req.user.id;
+  const panelId = req.params.panelId;
+
+  if (!panelId) {
+    return res.status(400).json({ message: "Missing panelId" });
+  }
+
+  try {
+    const [rows] = await db.query(
+      `SELECT inspected_at, description, fault_level, inspector
+       FROM panel_inspections
+       WHERE user_id = ? AND panel_id = ?
+       ORDER BY inspected_at DESC
+       LIMIT 3`,
+      [userId, panelId],
+    );
+
+    const history = rows.map((row) => ({
+      date: row.inspected_at,
+      description: row.description,
+      faultLevel: row.fault_level || "none",
+      inspector: row.inspector || "AI Detection System",
+    }));
+
+    return res.json(history);
+  } catch (err) {
+    console.error("Panel history error:", err);
+    return res.status(500).json({ message: "Could not fetch panel history" });
   }
 };
 
