@@ -1,15 +1,25 @@
-const Schedule = require("../models/Schedule");
 const { spawn } = require("child_process");
 const path = require("path");
 
+// In-memory storage for scheduled jobs (no MongoDB/Mongoose)
 const timers = new Map();
+const schedules = new Map();
 
-const pythonPath = "C:\\Program Files\\Python312\\python.exe";
+// Use configurable Python path; fall back to "python" from PATH
+const pythonPath = process.env.PYTHON_PATH || "python";
 
 function runAppPy() {
-  const projectDir = path.join(__dirname, "..", "project");
+  // __dirname => Backend/controllers, go up twice to repo root, then into project/
+  const projectDir = path.join(__dirname, "..", "..", "project");
   console.log("🚀 Running app.py...");
   const py = spawn(pythonPath, ["app.py"], { cwd: projectDir });
+
+  py.on("error", (err) => {
+    console.error(
+      `Failed to start app.py with Python at "${pythonPath}":`,
+      err.message || err,
+    );
+  });
 
   py.stdout.on("data", (data) => {
     console.log("[app.py]", data.toString());
@@ -26,20 +36,22 @@ function runAppPy() {
 
 function scheduleJob(id, datetime) {
   const delay = new Date(datetime) - Date.now();
-  if (delay <= 0) return;
+  if (delay <= 0) {
+    return;
+  }
 
-  const timeout = setTimeout(async () => {
+  const timeout = setTimeout(() => {
     runAppPy();
     timers.delete(id);
-    await Schedule.findByIdAndDelete(id).catch(console.error);
+    schedules.delete(id);
   }, delay);
 
   timers.set(id, timeout);
 }
 
+// No-op placeholder so existing import in server.js remains safe
 const loadSchedules = async () => {
-  const schedules = await Schedule.find();
-  schedules.forEach((s) => scheduleJob(s._id.toString(), s.datetime));
+  // Intentionally left blank: schedules are kept only in memory now
 };
 
 const createSchedule = async (req, res) => {
@@ -49,8 +61,17 @@ const createSchedule = async (req, res) => {
   }
 
   try {
-    const schedule = await Schedule.create({ datetime, reason });
-    scheduleJob(schedule._id.toString(), datetime);
+    const id = Date.now().toString();
+    const schedule = {
+      id,
+      datetime,
+      reason,
+      createdAt: new Date(),
+    };
+
+    schedules.set(id, schedule);
+    scheduleJob(id, datetime);
+
     res.json({ message: "✅ Scheduled successfully", schedule });
   } catch (err) {
     console.error("Error:", err);
