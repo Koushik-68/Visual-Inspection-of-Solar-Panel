@@ -39,6 +39,41 @@ async function init() {
     )
   `);
 
+  // ✅ Create GRID_CONFIG table (per-user grid rows/columns)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS grid_config (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT UNIQUE,
+      row_count INT NOT NULL,
+      col_count INT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+
+  // ✅ Create PANELS table (per-panel details for each grid cell)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS panels (
+      panel_id VARCHAR(100) PRIMARY KEY,
+      user_id INT NOT NULL,
+      row_index INT NOT NULL,
+      col_index INT NOT NULL,
+      company_name VARCHAR(255),
+      model VARCHAR(255),
+      size_width FLOAT,
+      size_height FLOAT,
+      installation_date DATE,
+      max_output FLOAT,
+      current_output FLOAT,
+      priority VARCHAR(20),
+      maintenance_suggestion TEXT,
+      current_fault_description TEXT,
+      current_fault_level VARCHAR(20),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+
   // ✅ Test connection
   try {
     const conn = await pool.getConnection();

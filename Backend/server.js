@@ -37,7 +37,7 @@ app.listen(PORT, async () => {
   try {
     await db.init(); // ✅ Initialize MySQL
     console.log("✅ MySQL connected successfully!");
-    console.log(`Connected to DB: ${process.env.DB_NAME}`);
+    console.log(`✅Connected to DB: ${process.env.DB_NAME}`);
 
     // loadSchedules();
   } catch (err) {

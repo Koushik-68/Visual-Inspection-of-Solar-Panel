@@ -11,7 +11,7 @@ interface ApiResponse {
   candidates?: { content: { parts: { text: string }[] } }[];
 }
 
-const GEMINI_API_KEY = "AIzaSyA5x67hvFwa6sTfTVttBjsw739mZDGWli4";
+const GEMINI_API_KEY = "API_KEY_HERE";
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 function AIChatbotPage() {

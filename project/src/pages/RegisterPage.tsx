@@ -18,6 +18,7 @@ import { usePanels } from "../context/PanelContext";
 import { Panel } from "../types";
 import "../styles/animations.css";
 import { toast } from "react-toastify";
+import axios from "../axios/axiosInstance";
 
 const RegisterPage: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -82,30 +83,45 @@ const RegisterPage: React.FC = () => {
   const handlePanelSubmit = async (panelData: PanelData) => {
     setIsLoading(true);
     try {
-      // Generate a unique panel ID
-      const panelId = `Panel-${Date.now()}-${Math.floor(
-        Math.random() * 10000
-      )}`;
-      // Create a new panel object
-      const newPanel: Panel = {
-        id: panelId,
-        position: { row: 1, column: 1 },
+      // Apply the same panel details to every generated panel in the grid
+      const updatedPanels: Panel[] = panels.map((panel) => ({
+        ...panel,
         companyName: panelData.company,
         size: {
           width: panelData.dimensions.width,
           height: panelData.dimensions.height,
         },
-        maxOutput: panelData.maxOutput,
-        currentOutput: panelData.maxOutput,
-        lastInspection: null,
-        inspectionHistory: [],
-        currentFault: { description: "No issues detected", level: "none" },
-        priority: "low",
-        maintenanceSuggestion: "No maintenance needed",
+        Model: Number(panelData.model) || panel.Model || 0,
+        installationDate: panelData.installationDate,
+        maxOutput:
+          typeof panelData.maxOutput === "number" && panelData.maxOutput > 0
+            ? panelData.maxOutput
+            : panel.maxOutput,
+        currentOutput:
+          typeof panelData.maxOutput === "number" && panelData.maxOutput > 0
+            ? panelData.maxOutput
+            : panel.currentOutput,
         createdBy: username,
-      };
-      setPanels([...panels, newPanel]);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      }));
+
+      // Update local state so the UI reflects these details immediately
+      setPanels(updatedPanels);
+
+      // Persist updated panels for every grid cell to the main backend (MySQL)
+      try {
+        await axios.post(
+          "/api/user/panels/bulk",
+          { panels: updatedPanels },
+          { withCredentials: true }
+        );
+      } catch (saveError) {
+        console.error("Error saving panel details to backend:", saveError);
+        toast.error(
+          "Panel details were applied locally, but saving to the database failed."
+        );
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
       navigate("/dashboard");
     } catch (err) {
       setError("Failed to save panel data. Please try again.");

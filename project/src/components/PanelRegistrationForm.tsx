@@ -78,10 +78,6 @@ const PanelRegistrationForm: React.FC<PanelRegistrationFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      // Store panel data in local storage
-      const STORAGE_KEY = 'solar_panel_registration_data';
-      const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([...existing, formData]));
       onSubmit(formData);
     }
   };

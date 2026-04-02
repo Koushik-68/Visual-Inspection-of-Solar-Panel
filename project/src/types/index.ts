@@ -16,7 +16,7 @@ export interface InspectionRecord {
 export interface Panel {
   id: string;
   Model: number;
-  installationDate: Date;
+  installationDate: string;
   position: { row: number; column: number };
   companyName: string;
   size: { width: number; height: number };

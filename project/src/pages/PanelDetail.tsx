@@ -13,8 +13,6 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea, Label
 } from 'recharts';
 
-const STORAGE_KEY = 'solar_panel_registration_data';
-
 const PanelDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -23,30 +21,6 @@ const PanelDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [localPanelData, setLocalPanelData] = useState<PanelData | null>(null);
-
-  useEffect(() => {
-    // Load locally stored panel data by id (if available)
-    if (id) {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          const panels: PanelData[] = JSON.parse(stored);
-          // Try to match by company/model/size/date if possible
-          // (You can improve this matching logic as needed)
-          let found: PanelData | null = null;
-          if (panels.length === 1) {
-            found = panels[0];
-          } else {
-            const match = panels.find(p => p.company && p.model);
-            found = match ? match : null;
-          }
-          setLocalPanelData(found);
-        } catch (e) {
-          setLocalPanelData(null);
-        }
-      }
-    }
-  }, [id]);
 
   useEffect(() => {
     const refreshData = async () => {
@@ -106,7 +80,7 @@ const PanelDetail: React.FC = () => {
   // Helper to map Panel to PanelData
   const panelToPanelData = (panel: any): PanelData => ({
     company: panel.companyName || '',
-    model: panel.model || '',
+    model: panel.model || (panel.Model != null ? String(panel.Model) : ''),
     maxOutput: panel.maxOutput || 0,
     dimensions: {
       width: panel.size?.width || 0,
@@ -282,14 +256,14 @@ const PanelDetail: React.FC = () => {
                     <Info className="h-4 w-4 text-blue-500 mr-2" />
                     <p className="text-sm font-medium text-gray-600">Company Name</p>
                   </div>
-                      <p className="text-base text-gray-900 pl-6">{localPanelData ? localPanelData.company : ''}</p>
+                      <p className="text-base text-gray-900 pl-6">{localPanelData ? localPanelData.company : panel.companyName || ''}</p>
                     </div>
                     <div className="p-3 rounded-lg border border-gray-100 bg-white transition-all duration-300 hover:bg-gray-50">
                       <div className="flex items-center mb-2">
                         <Info className="h-4 w-4 text-blue-500 mr-2" />
                         <p className="text-sm font-medium text-gray-600">Model</p>
                       </div>
-                      <p className="text-base text-gray-900 pl-6">{localPanelData ? localPanelData.model : ''}</p>
+                      <p className="text-base text-gray-900 pl-6">{localPanelData ? localPanelData.model : (panel.model || (panel.Model != null ? String(panel.Model) : ''))}</p>
                 </div>
                 <div className="p-3 rounded-lg border border-gray-100 bg-white transition-all duration-300 hover:bg-gray-50">
                   <div className="flex items-center mb-2">
@@ -310,14 +284,20 @@ const PanelDetail: React.FC = () => {
                     <Maximize className="h-4 w-4 text-blue-500 mr-2" />
                     <p className="text-sm font-medium text-gray-600">Size</p>
                   </div>
-                      <p className="text-base text-gray-900 pl-6">{localPanelData ? `${localPanelData.dimensions.width}m × ${localPanelData.dimensions.height}m` : ''}</p>
+                      <p className="text-base text-gray-900 pl-6">
+                        {localPanelData
+                          ? `${localPanelData.dimensions.width}m × ${localPanelData.dimensions.height}m`
+                          : panel.size
+                          ? `${panel.size.width}m × ${panel.size.height}m`
+                          : ''}
+                      </p>
                 </div>
                 <div className="p-3 rounded-lg border border-gray-100 bg-white transition-all duration-300 hover:bg-gray-50">
                   <div className="flex items-center mb-2">
                         <Calendar className="h-4 w-4 text-blue-500 mr-2" />
                         <p className="text-sm font-medium text-gray-600">Installation Date</p>
                   </div>
-                      <p className="text-base text-gray-900 pl-6">{localPanelData ? localPanelData.installationDate : ''}</p>
+                      <p className="text-base text-gray-900 pl-6">{localPanelData ? localPanelData.installationDate : (panel.installationDate || '')}</p>
                 </div>
                 <div className="p-3 rounded-lg border border-gray-100 bg-white transition-all duration-300 hover:bg-gray-50">
                   <div className="flex items-center mb-2">

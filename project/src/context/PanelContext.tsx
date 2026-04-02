@@ -7,17 +7,13 @@ import React, {
   useRef,
 } from "react";
 import { Panel, GridConfig } from "../types";
-import {
-  getPanels,
-  savePanels,
-  getGridConfig,
-  saveGridConfig,
-  clearAllStorage,
-} from "../utils/storage";
+import { clearAllStorage } from "../utils/storage";
 import {
   generateInitialPanels,
   simulateFaultChanges,
 } from "../utils/panelUtils";
+import axios from "../axios/axiosInstance";
+import { useAuth } from "./AuthContext";
 
 interface PanelContextType {
   panels: Panel[];
@@ -49,50 +45,52 @@ export const PanelProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loadingPanels, setLoadingPanels] = useState(true);
   const [isSimulating, setIsSimulating] = useState(false);
   const simulationInterval = useRef<number>();
+  const { isAuthenticated } = useAuth();
 
   // Load initial data from server first, then local storage as a fallback
   useEffect(() => {
+    // Don't hit protected endpoints until user is authenticated
+    if (!isAuthenticated) {
+      setPanels([]);
+      setGridConfig({ rows: 0, columns: 0 });
+      setLoadingPanels(false);
+      return;
+    }
+
     const loadData = async () => {
       setLoadingPanels(true);
       try {
-        const response = await fetch("http://localhost:3000/api/panels");
-        if (!response.ok) {
-          throw new Error("Failed to fetch panels from server");
-        }
-        const serverPanels = await response.json();
-        setPanels(serverPanels);
+        // Load panels from main backend (MySQL)
+        const response = await axios.get("/api/user/panels", {
+          withCredentials: true,
+        });
+        setPanels(response.data || []);
       } catch (error) {
-        console.error("Error fetching panels from server:", error);
-        try {
-          // Fallback to local storage only if server fetch fails and local data exists
-          const storedPanels = getPanels();
-          if (storedPanels && storedPanels.length > 0) {
-            console.log("Falling back to local storage panels.");
-            setPanels(storedPanels);
-          } else {
-            console.log("No panels found in local storage either.");
-            setPanels([]); // Ensure panels state is empty if no data is found
-          }
-        } catch (storageError) {
-          console.error("Error accessing local storage:", storageError);
-          // If there's a storage error, clear everything and start fresh
-          clearAllStorage();
-          setPanels([]);
-        }
+        console.error("Error fetching panels from backend:", error);
+        // If there's any client-side storage from older versions, clear it
+        clearAllStorage();
+        setPanels([]);
       }
 
+      // Load grid configuration from backend instead of localStorage
       try {
-        const storedConfig = getGridConfig();
-        setGridConfig(storedConfig);
+        const configResponse = await axios.get("/api/user/grid", {
+          withCredentials: true,
+        });
+        const serverConfig = configResponse.data as GridConfig;
+        setGridConfig({
+          rows: serverConfig?.rows || 0,
+          columns: serverConfig?.columns || 0,
+        });
       } catch (configError) {
-        console.error("Error loading grid config:", configError);
+        console.error("Error loading grid config from backend:", configError);
         setGridConfig({ rows: 0, columns: 0 });
       }
 
       setLoadingPanels(false);
     };
     loadData();
-  }, []);
+  }, [isAuthenticated]);
 
   const updatePanel = useCallback((updatedPanel: Panel) => {
     setPanels((prevPanels) => {
@@ -120,53 +118,39 @@ export const PanelProvider: React.FC<{ children: React.ReactNode }> = ({
     setLoadingPanels(true);
     const newConfig = { rows, columns };
     setGridConfig(newConfig);
-    saveGridConfig(newConfig); // Continue saving grid config
+    // Persist grid configuration to main backend (MySQL)
+    try {
+      await axios.post(
+        "/api/user/grid",
+        { rows, columns },
+        { withCredentials: true }
+      );
+    } catch (error) {
+      console.error("Error sending grid config to backend:", error);
+      // Continue locally so the user can proceed
+    }
 
     const generatedPanels = await generateInitialPanels(newConfig);
 
-    // Send all generated panels to the new initialization endpoint
+    // Send generated panels to backend in bulk so each cell has a DB row
     try {
-      const response = await fetch(
-        "http://localhost:3000/api/initialize-grid",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(generatedPanels), // Send the entire array
-        }
+      await axios.post(
+        "/api/user/panels/bulk",
+        { panels: generatedPanels },
+        { withCredentials: true }
       );
 
-      if (!response.ok) {
-        const errorDetails = await response.text(); // Get text for more info
-        throw new Error(
-          `Failed to initialize grid on server: ${response.status} - ${errorDetails}`
-        );
-      }
-
-      const result = await response.json();
-      console.log("Server response to initialize-grid:", result);
-
-      // After successful initialization, fetch the panels from the server
-      // to ensure the frontend state is in sync
-      await fetch("http://localhost:3000/api/panels")
-        .then((res) => res.json())
-        .then((serverPanels) => {
-          setPanels(serverPanels);
-          // Removed: savePanels(serverPanels); // Stop saving large panel data to local storage after initialization
-        })
-        .catch((error) =>
-          console.error("Error fetching panels after initialization:", error)
-        );
+      // After successful initialization, fetch from backend to stay in sync
+      const refreshed = await axios.get("/api/user/panels", {
+        withCredentials: true,
+      });
+      setPanels(refreshed.data || []);
     } catch (error) {
-      console.error("Error sending initial grid to server:", error);
-      // Optionally, handle this error by showing a message to the user
+      console.error("Error initializing grid panels in backend:", error);
+      // Fall back to local-only state if backend fails
+      setPanels(generatedPanels);
     }
 
-    // We still set panels locally immediately for a snappier UI,
-    // but the fetch after initialization ensures sync with server.
-    setPanels(generatedPanels);
-    // Removed: savePanels(generatedPanels); // Stop saving large panel data to local storage after generation
     setLoadingPanels(false);
   }, []);
 

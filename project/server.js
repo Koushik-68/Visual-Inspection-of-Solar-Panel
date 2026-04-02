@@ -16,7 +16,9 @@ app.use(express.json({ limit: '50mb' }));
 console.log('Current directory:', __dirname);
 
 const PANELS_FILE = path.join(__dirname, 'data', 'panels.json');
+const GRID_FILE = path.join(__dirname, 'data', 'gridConfig.json');
 console.log('Panels file path:', PANELS_FILE);
+console.log('Grid config file path:', GRID_FILE);
 
 // Ensure data directory exists
 const dataDir = path.join(__dirname, 'data');
@@ -29,6 +31,15 @@ if (!fs.existsSync(dataDir)) {
 if (!fs.existsSync(PANELS_FILE)) {
   console.log('Creating initial panels file...');
   fs.writeFileSync(PANELS_FILE, JSON.stringify([]));
+}
+
+// Initialize grid config file if it doesn't exist
+if (!fs.existsSync(GRID_FILE)) {
+  console.log('Creating initial grid config file...');
+  fs.writeFileSync(
+    GRID_FILE,
+    JSON.stringify({ rows: 0, columns: 0 }, null, 2)
+  );
 }
 
 // Helper function to read panels
@@ -55,6 +66,41 @@ const writePanels = (panels) => {
   } catch (error) {
     console.error('Error writing panels:', error);
     return false;
+  }
+};
+
+// Helper function to read grid config
+const readGridConfig = () => {
+  try {
+    console.log('Reading grid config from:', GRID_FILE);
+    const data = fs.readFileSync(GRID_FILE, 'utf8');
+    const config = JSON.parse(data);
+    if (
+      typeof config.rows === 'number' &&
+      typeof config.columns === 'number'
+    ) {
+      return config;
+    }
+    return { rows: 0, columns: 0 };
+  } catch (error) {
+    console.error('Error reading grid config, using default:', error);
+    return { rows: 0, columns: 0 };
+  }
+};
+
+// Helper function to write grid config
+const writeGridConfig = (config) => {
+  try {
+    const safeConfig = {
+      rows: Number(config.rows) || 0,
+      columns: Number(config.columns) || 0,
+    };
+    console.log('Writing grid config to:', GRID_FILE, safeConfig);
+    fs.writeFileSync(GRID_FILE, JSON.stringify(safeConfig, null, 2));
+    return safeConfig;
+  } catch (error) {
+    console.error('Error writing grid config:', error);
+    return { rows: 0, columns: 0 };
   }
 };
 
@@ -161,6 +207,46 @@ app.post('/api/initialize-grid', (req, res) => {
   } else {
     console.error('Error writing panels during grid initialization');
     res.status(500).json({ error: 'Failed to save grid data' });
+  }
+});
+
+// Endpoint to get current grid configuration (rows and columns)
+app.get('/api/grid-config', (req, res) => {
+  console.log('Received get grid-config request');
+  try {
+    const config = readGridConfig();
+    console.log('Sending grid config:', config);
+    res.json(config);
+  } catch (error) {
+    console.error('Error getting grid config:', error);
+    res.status(500).json({ error: 'Failed to get grid config' });
+  }
+});
+
+// Endpoint to update grid configuration (rows and columns)
+app.post('/api/grid-config', (req, res) => {
+  console.log('Received update grid-config request:', req.body);
+  const { rows, columns } = req.body || {};
+
+  if (
+    rows === undefined ||
+    columns === undefined ||
+    Number.isNaN(Number(rows)) ||
+    Number.isNaN(Number(columns))
+  ) {
+    console.log('Invalid grid-config payload:', req.body);
+    return res
+      .status(400)
+      .json({ error: 'rows and columns must be valid numbers' });
+  }
+
+  try {
+    const saved = writeGridConfig({ rows, columns });
+    console.log('Saved grid config:', saved);
+    res.json(saved);
+  } catch (error) {
+    console.error('Error updating grid config:', error);
+    res.status(500).json({ error: 'Failed to save grid config' });
   }
 });
 
