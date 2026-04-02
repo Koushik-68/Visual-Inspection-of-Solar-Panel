@@ -27,6 +27,10 @@ exports.createOrUpdateGrid = async (req, res) => {
       [userId, Number(rows), Number(columns)],
     );
 
+    // Whenever a user (re)defines their grid, clear their existing panels
+    // so the panel count always matches rows × columns with no leftovers.
+    await db.query("DELETE FROM panels WHERE user_id = ?", [userId]);
+
     const [rowsResult] = await db.query(
       "SELECT row_count, col_count FROM grid_config WHERE user_id = ?",
       [userId],

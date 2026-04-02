@@ -47,14 +47,14 @@ const PanelCard = React.memo(
 
     // Use custom color mapping based on description
     const { color: bgColor, level } = getCustomFaultLevelAndColor(
-      panel.currentFault.description
+      panel.currentFault.description,
     );
     const textColor =
       level === "high"
         ? "text-white"
         : level === "medium"
-        ? "text-gray-900"
-        : "text-white";
+          ? "text-gray-900"
+          : "text-white";
 
     // Short description with fewer characters for performance
     const shortDescription =
@@ -64,7 +64,7 @@ const PanelCard = React.memo(
 
     // Output percentage
     const outputPercentage = Math.round(
-      (panel.currentOutput / panel.maxOutput) * 100
+      (panel.currentOutput / panel.maxOutput) * 100,
     );
 
     // Handle panel card click
@@ -114,7 +114,7 @@ const PanelCard = React.memo(
             "shadow-lg",
             "flex",
             "items-center",
-            "justify-center"
+            "justify-center",
           );
           ghostElement.innerHTML = `<span>${panel.id}</span>`;
           ghostElement.style.width = "100px";
@@ -209,7 +209,7 @@ const PanelCard = React.memo(
         )}
       </Link>
     );
-  }
+  },
 );
 
 // Modal for panel edit/add operations
@@ -299,7 +299,7 @@ const PanelEditModal = ({
       const positionExists = existingPositions.some(
         (pos) =>
           pos.row === editedPanel.position?.row &&
-          pos.column === editedPanel.position?.column
+          pos.column === editedPanel.position?.column,
       );
 
       if (positionExists) {
@@ -600,9 +600,12 @@ const PanelGrid: React.FC = () => {
   useEffect(() => {
     const refreshData = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/panels");
+        // Refresh panels from the main backend (MySQL) for the logged-in user
+        const response = await fetch("http://localhost:5000/api/user/panels", {
+          credentials: "include",
+        });
         if (!response.ok) {
-          throw new Error("Failed to fetch panels");
+          throw new Error("Failed to fetch panels from backend");
         }
         const data = await response.json();
         setPanels(data);
@@ -731,7 +734,7 @@ const PanelGrid: React.FC = () => {
       setSuggestedPanels(suggestions);
       setShowSuggestions(suggestions.length > 0);
     },
-    [panels]
+    [panels],
   );
 
   // Update suggestions when the user types
@@ -755,7 +758,7 @@ const PanelGrid: React.FC = () => {
     console.log("Available panels:", panels.length);
     console.log(
       "First few panel IDs:",
-      panels.slice(0, 5).map((p) => p.id)
+      panels.slice(0, 5).map((p) => p.id),
     );
 
     // Search in all panels rather than just filtered panels
@@ -763,7 +766,7 @@ const PanelGrid: React.FC = () => {
     const panel = panels.find(
       (p) =>
         p.id.toLowerCase() === specificPanelId.toLowerCase() ||
-        p.id.toString() === specificPanelId
+        p.id.toString() === specificPanelId,
     );
 
     if (panel) {
@@ -882,10 +885,10 @@ const PanelGrid: React.FC = () => {
 
       // Find the indices of both panels
       const draggedIndex = updatedPanels.findIndex(
-        (p) => p.id === draggedPanel.id
+        (p) => p.id === draggedPanel.id,
       );
       const targetIndex = updatedPanels.findIndex(
-        (p) => p.id === targetPanel.id
+        (p) => p.id === targetPanel.id,
       );
 
       if (draggedIndex !== -1 && targetIndex !== -1) {
@@ -971,16 +974,16 @@ const PanelGrid: React.FC = () => {
         // Log the panel ID from the JSON and available panel IDs
         console.log(
           "Attempting to update panel with ID from JSON:",
-          detection.panelId
+          detection.panelId,
         );
         console.log(
           "Available panel IDs in current state:",
-          panels.map((p) => p.id)
+          panels.map((p) => p.id),
         );
 
         // Find the panel to update
         const panelToUpdate = panels.find(
-          (panel) => panel.id === detection.panelId
+          (panel) => panel.id === detection.panelId,
         );
 
         if (panelToUpdate) {
@@ -998,7 +1001,7 @@ const PanelGrid: React.FC = () => {
           // Use the updatePanel function from the context to save changes to local storage
           updatePanel(updatedPanel);
           console.log(
-            `Successfully updated panel ${detection.panelId} with detection data.`
+            `Successfully updated panel ${detection.panelId} with detection data.`,
           );
 
           // Backup the inspection data to the backend
@@ -1021,7 +1024,7 @@ const PanelGrid: React.FC = () => {
                     description: detection.faults,
                   },
                 }),
-              }
+              },
             );
 
             if (!response.ok) {
@@ -1035,7 +1038,7 @@ const PanelGrid: React.FC = () => {
           }
         } else {
           console.warn(
-            `Panel with ID ${detection.panelId} not found for detection update.`
+            `Panel with ID ${detection.panelId} not found for detection update.`,
           );
           alert(`Panel with ID ${detection.panelId} not found.`);
         }
@@ -1215,10 +1218,10 @@ const PanelGrid: React.FC = () => {
                                     panel.currentFault.level === "high"
                                       ? "bg-red-100 text-red-800"
                                       : panel.currentFault.level === "medium"
-                                      ? "bg-yellow-100 text-yellow-800"
-                                      : panel.currentFault.level === "low"
-                                      ? "bg-yellow-50 text-yellow-700"
-                                      : "bg-green-100 text-green-800"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : panel.currentFault.level === "low"
+                                          ? "bg-yellow-50 text-yellow-700"
+                                          : "bg-green-100 text-green-800"
                                   }`}
                                 >
                                   {panel.currentFault.level === "none"

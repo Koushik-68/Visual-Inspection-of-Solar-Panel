@@ -25,8 +25,31 @@ function mapPanelRow(row) {
     priority: row.priority || "low",
     maintenanceSuggestion:
       row.maintenance_suggestion || "No maintenance needed",
+    image: row.image || undefined,
     createdBy: undefined,
   };
+}
+
+// Helper to normalize fault level from description
+function getLevelFromDescription(description) {
+  const desc = (description || "").toLowerCase().replace(/-/g, " ");
+  if (desc.includes("physical damage")) return "high";
+  if (
+    desc.includes("dust") ||
+    desc.includes("bird") ||
+    desc.includes("drop") ||
+    desc.includes("snow")
+  ) {
+    return "medium";
+  }
+  if (
+    desc.includes("clean") ||
+    desc.includes("no faults") ||
+    desc.includes("healthy")
+  ) {
+    return "low";
+  }
+  return null;
 }
 
 // POST /api/user/panels
@@ -89,6 +112,58 @@ exports.listPanels = async (req, res) => {
   }
 };
 
+// POST /api/panels/detection-update
+// Called directly from the Python detection scripts (no auth)
+exports.updatePanelFromDetection = async (req, res) => {
+  try {
+    const { panelId, faults, level, image } = req.body;
+
+    if (!panelId) {
+      return res.status(400).json({ message: "panelId is required" });
+    }
+
+    const normalizedLevel = getLevelFromDescription(faults) || level || "none";
+
+    // Map fault level into a simple priority string
+    let priority = "low";
+    if (normalizedLevel === "high") priority = "high";
+    else if (normalizedLevel === "medium") priority = "medium";
+    else if (normalizedLevel === "low") priority = "low";
+
+    const [result] = await db.query(
+      `UPDATE panels
+       SET current_fault_description = ?,
+           current_fault_level = ?,
+           priority = ?,
+           image = COALESCE(?, image),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE panel_id = ?`,
+      [
+        faults || "No issues detected",
+        normalizedLevel,
+        priority,
+        image || null,
+        panelId,
+      ],
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Panel not found" });
+    }
+
+    const [rows] = await db.query("SELECT * FROM panels WHERE panel_id = ?", [
+      panelId,
+    ]);
+    const panelRow = rows[0];
+    return res.json(mapPanelRow(panelRow));
+  } catch (err) {
+    console.error("Detection update error:", err);
+    return res
+      .status(500)
+      .json({ message: "Could not update panel from detection" });
+  }
+};
+
 // PATCH /api/user/panels/:id
 exports.updatePanel = async (req, res) => {
   try {
@@ -96,7 +171,7 @@ exports.updatePanel = async (req, res) => {
     const panel = await Panel.findOneAndUpdate(
       { _id: req.params.id, owner },
       req.body,
-      { new: true }
+      { new: true },
     );
     if (!panel) return res.status(404).json({ message: "Panel not found" });
     return res.json(panel);
@@ -265,10 +340,10 @@ exports.bulkCreatePanels = async (req, res) => {
 exports.backupInspectionData = async (req, res) => {
   try {
     const { panelId, inspectionData } = req.body;
-    
+
     // Find the panel and update its inspection history
     const panel = await Panel.findOne({ id: panelId });
-    
+
     if (!panel) {
       return res.status(404).json({ message: "Panel not found" });
     }
@@ -276,7 +351,7 @@ exports.backupInspectionData = async (req, res) => {
     // Add the new inspection data to the history
     panel.inspectionHistory.push({
       date: new Date(),
-      ...inspectionData
+      ...inspectionData,
     });
 
     // Update current fault if provided
@@ -286,25 +361,32 @@ exports.backupInspectionData = async (req, res) => {
 
     // Save the updated panel
     await panel.save();
-    
-    return res.status(200).json({ message: "Inspection data backed up successfully" });
+
+    return res
+      .status(200)
+      .json({ message: "Inspection data backed up successfully" });
   } catch (err) {
     console.error("Inspection backup error:", err);
-    return res.status(500).json({ message: "Could not backup inspection data" });
+    return res
+      .status(500)
+      .json({ message: "Could not backup inspection data" });
   }
 };
 
 // GET /api/panels/backup-data
 exports.getBackupData = async (req, res) => {
   try {
-    const panels = await Panel.find({}, {
-      id: 1,
-      inspectionHistory: 1,
-      currentFault: 1,
-      lastInspection: 1,
-      _id: 0
-    });
-    
+    const panels = await Panel.find(
+      {},
+      {
+        id: 1,
+        inspectionHistory: 1,
+        currentFault: 1,
+        lastInspection: 1,
+        _id: 0,
+      },
+    );
+
     return res.json(panels);
   } catch (err) {
     console.error("Error fetching backup data:", err);

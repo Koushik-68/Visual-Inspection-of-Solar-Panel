@@ -106,11 +106,11 @@ HTML_PAGE = """
 
 # === COMMON HELPERS ===
 def send_detection_to_panel(detection_data, max_retries=3):
+    """Send detected data directly to the main backend to update DB."""
+    url = 'http://localhost:5000/api/panels/detection-update'
     for attempt in range(max_retries):
         try:
-            response = requests.post('http://localhost:3000/api/update-panel', 
-                                     json=detection_data,
-                                     timeout=10)
+            response = requests.post(url, json=detection_data, timeout=10)
             if response.status_code == 200:
                 print(f"✅ Sent data for {detection_data['panelId']}")
                 return True

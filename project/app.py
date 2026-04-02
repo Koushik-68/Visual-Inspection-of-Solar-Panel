@@ -52,28 +52,25 @@ def save_detection_data(detection_data):
         return False
 
 def send_detection_to_panel(detection_data, max_retries=3):
+    """Send detected data directly to the main backend to update DB."""
+    url = 'http://localhost:5000/api/panels/detection-update'
     for attempt in range(max_retries):
         try:
-            print(f"Attempting to send data (Attempt {attempt + 1}/{max_retries})...")
-            response = requests.post('http://localhost:3000/api/update-panel', 
-                                  json=detection_data,
-                                  timeout=10)
+            print(f"Attempting to send data to {url} (Attempt {attempt + 1}/{max_retries})...")
+            response = requests.post(url, json=detection_data, timeout=10)
             if response.status_code == 200:
                 print(f"✅ Detection data sent successfully for {detection_data['panelId']}")
                 return True
             else:
                 print(f"❌ Failed to send detection data: {response.status_code}")
                 print(f"Response: {response.text}")
-                if attempt < max_retries - 1:
-                    print(f"Retrying... (Attempt {attempt + 2}/{max_retries})")
-                    time.sleep(1)
-                continue
         except requests.exceptions.RequestException as e:
             print(f"❌ Error sending detection data: {str(e)}")
-            if attempt < max_retries - 1:
-                print(f"Retrying... (Attempt {attempt + 2}/{max_retries})")
-                time.sleep(1)
-            continue
+
+        if attempt < max_retries - 1:
+            print(f"Retrying... (Attempt {attempt + 2}/{max_retries})")
+            time.sleep(1)
+
     print("❌ All retry attempts failed. Data saved locally only.")
     return False
 
