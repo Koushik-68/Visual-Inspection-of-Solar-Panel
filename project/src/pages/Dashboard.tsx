@@ -15,6 +15,7 @@ import Button from "../components/common/Button";
 import { Link } from "react-router-dom";
 import EnhancedVirtualPanelList from "../components/EnhancedVirtualPanelList";
 import { ScheduleModal } from "../components/ScheduleForm";
+import axiosInstance from "../axios/axiosInstance";
 
 const PANELS_LIMIT = 5; // Limit for each priority section
 
@@ -196,6 +197,37 @@ const Dashboard: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const { panels, loadingPanels } = usePanels();
   const [isLoadingPriorityPanels, setIsLoadingPriorityPanels] = useState(false);
+  const [cameraRunning, setCameraRunning] = useState(false);
+
+  const handleCameraToggle = async () => {
+    try {
+      if (!cameraRunning) {
+        await axiosInstance.post("/api/camera/start");
+        setCameraRunning(true);
+      } else {
+        await axiosInstance.post("/api/camera/stop");
+        setCameraRunning(false);
+      }
+    } catch (err) {
+      console.error("Error toggling camera:", err);
+    }
+  };
+
+  // Sync cameraRunning with backend when dashboard mounts
+  useEffect(() => {
+    const fetchCameraStatus = async () => {
+      try {
+        const res = await axiosInstance.get("/api/camera/status");
+        if (typeof res.data?.running === "boolean") {
+          setCameraRunning(res.data.running);
+        }
+      } catch (err) {
+        console.error("Error fetching camera status:", err);
+      }
+    };
+
+    fetchCameraStatus();
+  }, []);
 
   // Memoize the total panel count to avoid unnecessary recalculations
   const totalPanels = useMemo(() => panels.length, [panels]);
@@ -207,7 +239,7 @@ const Dashboard: React.FC = () => {
         const desc = p.currentFault?.description?.toLowerCase() || "";
         return desc.includes("clean") || desc.includes("no fault");
       }),
-    [panels]
+    [panels],
   );
 
   const faultPanels = useMemo(
@@ -220,7 +252,7 @@ const Dashboard: React.FC = () => {
           desc.includes("snow")
         );
       }),
-    [panels]
+    [panels],
   );
 
   const criticalPanels = useMemo(
@@ -229,7 +261,7 @@ const Dashboard: React.FC = () => {
         const desc = p.currentFault?.description?.toLowerCase() || "";
         return desc.includes("physical");
       }),
-    [panels]
+    [panels],
   );
 
   // Custom panel lists for the priority widgets
@@ -239,7 +271,7 @@ const Dashboard: React.FC = () => {
         const desc = p.currentFault?.description?.toLowerCase() || "";
         return desc.includes("physical");
       }),
-    [panels]
+    [panels],
   );
 
   const mediumPriorityPanelsCustom = useMemo(
@@ -252,7 +284,7 @@ const Dashboard: React.FC = () => {
           desc.includes("snow")
         );
       }),
-    [panels]
+    [panels],
   );
 
   const lowPriorityPanelsCustom = useMemo(
@@ -261,7 +293,7 @@ const Dashboard: React.FC = () => {
         const desc = p.currentFault?.description?.toLowerCase() || "";
         return desc.includes("clean") || desc.includes("no fault");
       }),
-    [panels]
+    [panels],
   );
 
   // Enhanced load function with performance optimizations
@@ -356,14 +388,17 @@ const Dashboard: React.FC = () => {
                 View All Panels
               </Button>
             </Link>
-            <a
-              href="http://127.0.0.1:5001/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+            {/* Camera control button (start/stop app.py via backend) */}
+            <button
+              onClick={handleCameraToggle}
+              className={`px-4 py-2 rounded text-white ${
+                cameraRunning
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
             >
-              Inspect
-            </a>
+              {cameraRunning ? "Stop Camera" : "Camera"}
+            </button>
             <div className="flex gap-4 items-center">
               <button
                 onClick={() => setShowModal(true)}
@@ -421,7 +456,7 @@ const Dashboard: React.FC = () => {
                 </p>
                 <p className="text-sm text-green-600 mt-1">
                   {Math.round(
-                    (healthyPanels.length / (totalPanels || 1)) * 100
+                    (healthyPanels.length / (totalPanels || 1)) * 100,
                   )}
                   % of total
                 </p>
@@ -435,7 +470,7 @@ const Dashboard: React.FC = () => {
                 className="h-1 bg-green-500 rounded-full"
                 style={{
                   width: `${Math.round(
-                    (healthyPanels.length / (totalPanels || 1)) * 100
+                    (healthyPanels.length / (totalPanels || 1)) * 100,
                   )}%`,
                 }}
               ></div>
@@ -468,7 +503,7 @@ const Dashboard: React.FC = () => {
                 className="h-1 bg-yellow-500 rounded-full"
                 style={{
                   width: `${Math.round(
-                    (faultPanels.length / (totalPanels || 1)) * 100
+                    (faultPanels.length / (totalPanels || 1)) * 100,
                   )}%`,
                 }}
               ></div>
@@ -489,7 +524,7 @@ const Dashboard: React.FC = () => {
                 </p>
                 <p className="text-sm text-red-600 mt-1">
                   {Math.round(
-                    (criticalPanels.length / (totalPanels || 1)) * 100
+                    (criticalPanels.length / (totalPanels || 1)) * 100,
                   )}
                   % of total
                 </p>
@@ -503,7 +538,7 @@ const Dashboard: React.FC = () => {
                 className="h-1 bg-red-500 rounded-full"
                 style={{
                   width: `${Math.round(
-                    (criticalPanels.length / (totalPanels || 1)) * 100
+                    (criticalPanels.length / (totalPanels || 1)) * 100,
                   )}%`,
                 }}
               ></div>
@@ -534,7 +569,7 @@ const Dashboard: React.FC = () => {
                   className="h-full bg-green-500 transition-all duration-500 ease-out"
                   style={{
                     width: `${Math.round(
-                      (healthyPanels.length / (totalPanels || 1)) * 100
+                      (healthyPanels.length / (totalPanels || 1)) * 100,
                     )}%`,
                   }}
                 ></div>
@@ -556,7 +591,7 @@ const Dashboard: React.FC = () => {
                   className="h-full bg-yellow-300 transition-all duration-500 ease-out"
                   style={{
                     width: `${Math.round(
-                      (faultPanels.length / (totalPanels || 1)) * 100
+                      (faultPanels.length / (totalPanels || 1)) * 100,
                     )}%`,
                   }}
                 ></div>
@@ -578,7 +613,7 @@ const Dashboard: React.FC = () => {
                   className="h-full bg-red-500 transition-all duration-500 ease-out"
                   style={{
                     width: `${Math.round(
-                      (criticalPanels.length / (totalPanels || 1)) * 100
+                      (criticalPanels.length / (totalPanels || 1)) * 100,
                     )}%`,
                   }}
                 ></div>

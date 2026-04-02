@@ -10,6 +10,8 @@ const userRoutes = require("./routes/userRoutes");
 const scheduleRouter = require("./routes/scheduleRoute");
 const { loadSchedules } = require("./controllers/scheduleController");
 const panelCtrl = require("./controllers/panelController");
+const cameraCtrl = require("./controllers/cameraController");
+const authMiddleware = require("./middleware/authMiddleware");
 
 const app = express();
 
@@ -28,6 +30,11 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/schedule", scheduleRouter);
+
+// Camera control (manual app.py start/stop from dashboard)
+app.get("/api/camera/status", authMiddleware, cameraCtrl.getCameraStatus);
+app.post("/api/camera/start", authMiddleware, cameraCtrl.startCamera);
+app.post("/api/camera/stop", authMiddleware, cameraCtrl.stopCamera);
 
 // Detection updates (no auth) - called from Python app
 app.post("/api/panels/detection-update", panelCtrl.updatePanelFromDetection);
