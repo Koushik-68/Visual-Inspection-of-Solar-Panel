@@ -30,5 +30,6 @@ Backend/node_modules/
 .vscode/
 .DS_Store
 uploads/
+detections/
 
 received_images/
