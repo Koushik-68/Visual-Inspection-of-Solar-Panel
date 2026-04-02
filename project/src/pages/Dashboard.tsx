@@ -198,6 +198,7 @@ const Dashboard: React.FC = () => {
   const { panels, loadingPanels } = usePanels();
   const [isLoadingPriorityPanels, setIsLoadingPriorityPanels] = useState(false);
   const [cameraRunning, setCameraRunning] = useState(false);
+  const [showInspectModal, setShowInspectModal] = useState(false);
 
   const handleCameraToggle = async () => {
     try {
@@ -388,25 +389,12 @@ const Dashboard: React.FC = () => {
                 View All Panels
               </Button>
             </Link>
-            {/* Camera control button (start/stop app.py via backend) */}
             <button
-              onClick={handleCameraToggle}
-              className={`px-4 py-2 rounded text-white ${
-                cameraRunning
-                  ? "bg-red-600 hover:bg-red-700"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
+              onClick={() => setShowInspectModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
             >
-              {cameraRunning ? "Stop Camera" : "Camera"}
+              Inspect
             </button>
-            <div className="flex gap-4 items-center">
-              <button
-                onClick={() => setShowModal(true)}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-              >
-                📅 Schedule Inspection
-              </button>
-            </div>
             <ScheduleModal
               isOpen={showModal}
               onClose={() => setShowModal(false)}
@@ -710,6 +698,59 @@ const Dashboard: React.FC = () => {
           </div>
         </Card>
       </div>
+
+      {/* Inspect options modal */}
+      {showInspectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-white text-gray-900 rounded-lg p-6 shadow-xl w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Inspect Options</h2>
+              <button
+                onClick={() => setShowInspectModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-lg font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  handleCameraToggle();
+                  setShowInspectModal(false);
+                }}
+                className={`w-full px-4 py-2 rounded text-white font-medium ${
+                  cameraRunning
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-blue-600 hover:bg-blue-700"
+                }`}
+              >
+                {cameraRunning ? "Stop Camera" : "Camera"}
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowInspectModal(false);
+                  setShowModal(true);
+                }}
+                className="w-full px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white font-medium"
+              >
+                📅 Schedule Inspection
+              </button>
+
+              <a
+                href="http://127.0.0.1:5001/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full text-center px-4 py-2 rounded bg-gray-800 hover:bg-gray-900 text-white font-medium"
+                onClick={() => setShowInspectModal(false)}
+              >
+                Import Image & GDrive
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
