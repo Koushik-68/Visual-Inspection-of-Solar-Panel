@@ -1,130 +1,131 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { Sun, Grid, ClipboardList, LogOut, BarChart3, Settings } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import React from "react";
+import { NavLink } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Zap,
+  History,
+  Bot,
+  Cpu,
+  LogOut,
+  ShieldCheck,
+  ChevronRight,
+} from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 const Sidebar: React.FC = () => {
   const { logout, isAdmin } = useAuth();
 
+  // Unified class for NavLinks to keep code clean
+  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+    `group flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 ease-out ${
+      isActive
+        ? "bg-gradient-to-r from-amber-500/10 to-transparent border-l-4 border-amber-500 text-amber-500"
+        : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
+    }`;
+
   return (
-    <div className="bg-gray-900 text-gray-100 w-64 h-screen flex flex-col shadow-xl">
-      {/* Logo and app name */}
-      <div className="p-5 border-b border-gray-800">
+    <div className="bg-[#0f172a] text-slate-200 w-72 h-screen flex flex-col border-r border-slate-800/50 font-sans">
+      {/* Brand Header */}
+      <div className="px-8 py-10">
         <div className="flex items-center space-x-3">
-          <div className="bg-amber-500 p-2.5 rounded-lg shadow-md transform transition-transform duration-300 hover:rotate-12 hover:scale-110">
-            <Sun className="h-5 w-5 text-gray-900" />
+          <div className="relative">
+            <div className="absolute inset-0 bg-amber-500 blur-md opacity-20 animate-pulse"></div>
+            <div className="relative bg-gradient-to-br from-amber-400 to-amber-600 p-2 rounded-xl shadow-lg shadow-amber-900/20">
+              <Zap className="h-6 w-6 text-slate-900 stroke-[2.5px]" />
+            </div>
           </div>
-          <h1 className="text-xl font-bold text-amber-400">
-            Solar Inspector
-          </h1>
+          <div>
+            <h1 className="text-lg font-bold tracking-tight text-white leading-none">
+              Solar
+              <span className="text-amber-500 underline decoration-amber-500/30 underline-offset-4">
+                Inspector
+              </span>
+            </h1>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 mt-1.5 font-semibold">
+              Enterprise AI
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-6 px-4">
-        <div className="mb-4 px-2">
-          <p className="text-xs uppercase font-bold text-gray-500 tracking-wider">Main Menu</p>
-        </div>
-        <ul className="space-y-2">
-          <li>
-            <NavLink
-              to="/"
-              className={({ isActive }) =>
-                `flex items-center p-3 rounded-lg transition-all duration-200 ease-in-out transform ${
-                  isActive
-                    ? 'bg-gray-800 text-amber-400 translate-x-2 shadow-md'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-amber-300 hover:translate-x-1'
-                }`
-              }
-            >
-              <BarChart3 className="h-5 w-5 mr-3" />
-              <span className="font-medium">Dashboard</span>
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/panels"
-              className={({ isActive }) =>
-                `flex items-center p-3 rounded-lg transition-all duration-200 ease-in-out transform ${
-                  isActive
-                    ? 'bg-gray-800 text-amber-400 translate-x-2 shadow-md'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-amber-300 hover:translate-x-1'
-                }`
-              }
-            >
-              <Grid className="h-5 w-5 mr-3" />
-              <span className="font-medium">Manage Panels</span>
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/inspections"
-              className={({ isActive }) =>
-                `flex items-center p-3 rounded-lg transition-all duration-200 ease-in-out transform ${
-                  isActive
-                    ? 'bg-gray-800 text-amber-400 translate-x-2 shadow-md'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-amber-300 hover:translate-x-1'
-                }`
-              }
-            >
-              <ClipboardList className="h-5 w-5 mr-3" />
-              <span className="font-medium">Inspection History</span>
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/ai-assistance"
-              className={({ isActive }) =>
-                `flex items-center p-3 rounded-lg transition-all duration-200 ease-in-out transform ${
-                  isActive
-                    ? 'bg-gray-800 text-amber-400 translate-x-2 shadow-md'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-amber-300 hover:translate-x-1'
-                }`
-              }
-            >
-              <span className="h-5 w-5 mr-3" role="img" aria-label="AI">🤖</span>
-              <span className="font-medium">AI Assistance</span>
-            </NavLink>
-          </li>
-
-          {/* Admin section */}
-          {isAdmin && (
-            <>
-              <div className="pt-6 mb-3 px-2">
-                <p className="text-xs uppercase font-bold text-gray-500 tracking-wider">Admin Area</p>
-                <div className="h-0.5 w-12 bg-gray-700 mt-2"></div>
-              </div>
+      {/* Navigation Scroll Area */}
+      <nav className="flex-1 overflow-y-auto px-4 space-y-8 custom-scrollbar">
+        {/* Main Section */}
+        <div>
+          <h2 className="px-4 mb-4 text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500">
+            Operations
+          </h2>
+          <ul className="space-y-1.5">
             <li>
-              <NavLink
-                to="/grid-builder"
-                className={({ isActive }) =>
-                    `flex items-center p-3 rounded-lg transition-all duration-200 ease-in-out transform ${
-                    isActive
-                        ? 'bg-gray-800 text-amber-400 translate-x-2 shadow-md'
-                        : 'text-gray-300 hover:bg-gray-800 hover:text-amber-300 hover:translate-x-1'
-                  }`
-                }
-              >
-                  <Settings className="h-5 w-5 mr-3" />
-                  <span className="font-medium">Grid Builder</span>
+              <NavLink to="/" className={navLinkClass}>
+                <div className="flex items-center">
+                  <LayoutDashboard className="h-5 w-5 mr-3 stroke-[1.5px]" />
+                  <span className="font-medium text-[14px]">Dashboard</span>
+                </div>
+                <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
               </NavLink>
             </li>
-            </>
-          )}
-        </ul>
+            <li>
+              <NavLink to="/panels" className={navLinkClass}>
+                <div className="flex items-center">
+                  <Cpu className="h-5 w-5 mr-3 stroke-[1.5px]" />
+                  <span className="font-medium text-[14px]">
+                    Panel Management
+                  </span>
+                </div>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/inspections" className={navLinkClass}>
+                <div className="flex items-center">
+                  <History className="h-5 w-5 mr-3 stroke-[1.5px]" />
+                  <span className="font-medium text-[14px]">Audit Logs</span>
+                </div>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/ai-assistance" className={navLinkClass}>
+                <div className="flex items-center">
+                  <Bot className="h-5 w-5 mr-3 stroke-[1.5px]" />
+                  <span className="font-medium text-[14px]">AI Inspector</span>
+                </div>
+              </NavLink>
+            </li>
+          </ul>
+        </div>
+
+        {/* Admin Section */}
+        {isAdmin && (
+          <div className="pt-2">
+            <h2 className="px-4 mb-4 text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500 flex items-center">
+              <ShieldCheck className="h-3 w-3 mr-2" /> Administration
+            </h2>
+            <ul className="space-y-1.5">
+              <li>
+                <NavLink to="/grid-builder" className={navLinkClass}>
+                  <div className="flex items-center">
+                    <Zap className="h-5 w-5 mr-3 stroke-[1.5px]" />
+                    <span className="font-medium text-[14px]">
+                      Grid Infrastructure
+                    </span>
+                  </div>
+                </NavLink>
+              </li>
+            </ul>
+          </div>
+        )}
       </nav>
 
-      {/* Footer with logout */}
-      <div className="p-4 border-t border-gray-800">
+      {/* Bottom Profile/Action Section */}
+      <div className="p-6 bg-slate-900/30 border-t border-slate-800/50">
         <button
           onClick={logout}
-          className="flex items-center p-3 w-full text-left rounded-lg text-gray-300 hover:bg-gray-800 transition-all duration-200 ease-in-out group"
+          className="flex items-center justify-center space-x-3 w-full py-3 rounded-xl border border-slate-700/50 text-slate-400 hover:text-white hover:bg-red-500/10 hover:border-red-500/50 transition-all duration-300 group"
         >
-          <div className="relative">
-            <LogOut className="h-5 w-5 mr-3 group-hover:text-red-400 transition-colors duration-200" />
-            <span className="absolute top-0 left-0 w-full h-full bg-gray-900 rounded-full animate-ping opacity-0 group-hover:opacity-30"></span>
-          </div>
-          <span className="font-medium">Logout</span>
+          <LogOut className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+          <span className="text-sm font-semibold tracking-wide">
+            Terminate Session
+          </span>
         </button>
       </div>
     </div>
