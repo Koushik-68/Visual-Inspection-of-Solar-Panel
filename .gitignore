@@ -32,4 +32,5 @@ Backend/node_modules/
 uploads/
 detections/
 
+panel_results.json/
 received_images/
