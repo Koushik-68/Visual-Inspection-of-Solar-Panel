@@ -8,6 +8,7 @@ const db = require("./config/db"); // ✅ MySQL
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/userRoutes");
 const scheduleRouter = require("./routes/scheduleRoute");
+const aiRoutes = require("./routes/aiRoutes");
 const { loadSchedules } = require("./controllers/scheduleController");
 const panelCtrl = require("./controllers/panelController");
 const cameraCtrl = require("./controllers/cameraController");
@@ -30,6 +31,7 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/schedule", scheduleRouter);
+app.use("/api/ai", aiRoutes);
 
 // Camera control (manual app.py start/stop from dashboard)
 app.get("/api/camera/status", authMiddleware, cameraCtrl.getCameraStatus);
